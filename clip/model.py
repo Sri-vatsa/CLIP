@@ -179,9 +179,13 @@ class ResidualAttentionBlock(nn.Module):
 
     def attention(self, x: torch.Tensor):
         self.attn_mask = self.attn_mask.to(dtype=x.dtype, device=x.device) if self.attn_mask is not None else None
-        return self.attn(x, x, x, need_weights=True, attn_mask=self.attn_mask)[0]
+        return self.attn(x, x, x, need_weights=True, attn_mask=self.attn_mask)
 
-    def forward(self, x: torch.Tensor, attn_weights: torch.Tensor):
+    def forward(self, x: torch.Tensor):
+        
+        if isinstance(x, tuple):
+            x = x[0]
+
         attn_out, attn_weights = self.attention(self.ln_1(x))
         x = x + attn_out
         x = x + self.mlp(self.ln_2(x))
@@ -196,7 +200,7 @@ class Transformer(nn.Module):
         self.resblocks = nn.Sequential(*[ResidualAttentionBlock(width, heads, attn_mask) for _ in range(layers)])
 
     def forward(self, x: torch.Tensor):
-        return self.resblocks(x, None)
+        return self.resblocks(x)
 
 
 class VisualTransformer(nn.Module):
